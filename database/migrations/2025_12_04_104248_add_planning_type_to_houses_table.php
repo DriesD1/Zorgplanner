@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('houses', function (Blueprint $table) {
-            // 'week' = De matrix die je nu bouwt (flexibel)
-            // 'day' = Een specifieke agenda met uren (datum + tijd)
-            $table->string('planning_type')->default('week')->after('name'); 
+            // We maken hem nullable, want als 'has_custom_schedule' uit staat, boeit dit niet.
+            // Opties worden: 'week' of 'day'
+            $table->string('planning_type')->nullable()->default('week')->after('has_custom_schedule');
         });
     }
 
