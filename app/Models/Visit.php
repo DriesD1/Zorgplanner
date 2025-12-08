@@ -8,11 +8,11 @@ class Visit extends Model
 {
     protected $guarded = [];
 
+    // Dit zorgt dat datums nooit als tekst worden gezien, 
+    // maar altijd als stabiele datum-objecten.
     protected $casts = [
-        'date' => 'date',
+        'date' => 'date', 
         'is_planned' => 'boolean',
-        'is_done' => 'boolean',
-        'is_reported' => 'boolean',
     ];
 
     public function client()
