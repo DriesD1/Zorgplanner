@@ -122,20 +122,24 @@
                                 @if($appointment)
                                 <!-- AFSPRAAK BLOK -->
                                 <div
-                                    class="absolute inset-0.5 rounded border-l-4 shadow-sm flex flex-col items-center justify-center cursor-default z-10 transition-transform hover:scale-[1.01]
-                                                    {{ $appointment->is_planned ? 'bg-blue-100/90 border-blue-500 dark:bg-blue-900/60 dark:border-blue-400' : 'bg-green-100/90 border-green-500 dark:bg-green-900/60 dark:border-green-400' }}">
+                                    class="absolute inset-0 border-l-4 shadow-sm flex flex-col items-center justify-center gap-1 cursor-default z-10 transition-transform hover:scale-[1.01]
+                                                    {{ $appointment->is_planned ? 'border-sky-500 dark:border-sky-400' : 'bg-green-100/90 border-green-500 dark:bg-green-900/60 dark:border-green-400' }}"
+                                    @if($appointment->is_planned)
+                                        style="background: rgba(56, 189, 248, 0.16); border-left: solid rgba(80, 189, 248, 0.16); border-left-width: 0.2rem;"
+                                    @endif
+                                >
 
                                     <span
-                                        class="text-xs font-bold text-blue-900 dark:text-blue-100 truncate w-full px-2 text-center select-none">
+                                        class="text-xs font-bold {{ $appointment->is_planned ? 'text-sky-900 dark:text-sky-100' : 'text-green-900 dark:text-green-100' }} truncate w-full px-2 text-center select-none">
                                         {{ $appointment->client->name }}
                                     </span>
 
                                     <button wire:click.stop="removeAppointment('{{ $dateStr }}', '{{ $time }}')"
                                         wire:confirm="Wil je de afspraak van {{ $appointment->client->name }} annuleren?"
-                                        class="absolute top-0.5 right-0.5 p-1 text-blue-800/40 hover:text-red-600 hover:bg-white/50 dark:text-blue-100/40 dark:hover:bg-black/20 rounded transition-all opacity-0 group-hover:opacity-100 z-20"
+                                        class="p-1 {{ $appointment->is_planned ? 'text-sky-700 dark:text-sky-100' : 'text-green-700 dark:text-green-100' }} hover:text-red-600 hover:bg-white/70 dark:hover:bg-black/30 rounded transition-all"
                                         title="Verwijderen">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                                            class="w-3.5 h-3.5">
+                                            class="w-4 h-4">
                                             <path fill-rule="evenodd"
                                                 d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z"
                                                 clip-rule="evenodd" />
@@ -157,6 +161,24 @@
                     @endforeach
                 </tbody>
             </table>
+
+            @php
+                $todayDate = now()->format('Y-m-d');
+                $hasToday = collect($daysHeader)->contains(fn($d) => $d['date'] === $todayDate);
+                $rowHeight = 60; // hoogte van elke rij (px) afgestemd op style="height: 60px"
+                $totalHeight = count($times) * $rowHeight;
+                $minutesNow = now()->diffInMinutes(now()->copy()->startOfDay());
+                $offset = ($minutesNow / 1440) * $totalHeight;
+            @endphp
+            @if($hasToday)
+                <div class="pointer-events-none absolute left-0 right-0" style="{{ 'top: ' . $offset . 'px;' }}">
+                    <div class="flex items-center gap-2 px-6">
+                        <span class="w-2 h-2 rounded-full bg-red-500 shadow"></span>
+                        <div class="h-px bg-red-500/70 flex-1"></div>
+                        <span class="text-xs font-semibold text-red-500">{{ now()->format('H:i') }}</span>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
     @endif
