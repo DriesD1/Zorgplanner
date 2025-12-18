@@ -18,7 +18,8 @@ class HouseResource extends Resource
     protected static ?string $modelLabel = 'huis';
     protected static ?string $pluralModelLabel = 'huizen';
     protected static ?string $navigationLabel = 'Huizen';
-    protected static ?string $navigationIcon = 'heroicon-o-home';
+    protected static ?string $navigationIcon = 'heroicon-o-building-office';
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {

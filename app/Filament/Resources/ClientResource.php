@@ -13,6 +13,7 @@ use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Str; 
 
 class ClientResource extends Resource
 {
@@ -22,6 +23,7 @@ class ClientResource extends Resource
     protected static ?string $pluralModelLabel = 'klanten';
     protected static ?string $navigationLabel = 'Klanten';
     protected static ?string $navigationIcon = 'heroicon-o-users';
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
@@ -52,7 +54,7 @@ class ClientResource extends Resource
                             ->relationship('house', 'name', function ($query) {
                                 return $query->where('user_id', auth()->id());
                             })
-                            ->live() // Zorgt voor refresh
+                            ->live() 
                             ->afterStateUpdated(function (Set $set, $state) {
                                 $set('house_id', $state);
                             })
@@ -66,7 +68,7 @@ class ClientResource extends Resource
                             ->label('Kamernummer'),
                     ])->columns(2),
 
-                // SECTIE 2: PLANNING INSTELLINGEN (Aangepast voor Fout 2)
+                // SECTIE 2: PLANNING INSTELLINGEN
                 \Filament\Forms\Components\Section::make('Planning Instellingen')
                     ->schema([
                         \Filament\Forms\Components\TextInput::make('frequency_weeks')
@@ -79,17 +81,13 @@ class ClientResource extends Resource
                             ->native(false),
                     ])
                     ->columns(2)
-                    // LOGICA AANPASSING:
-                    // Verberg deze sectie als het huis op 'dagplanning' staat.
-                    // Toon het wel als het 'weekplanning' is of als er nog geen type is gekozen.
                     ->visible(function (Get $get) {
                         $houseId = $get('house_id');
                         if (! $houseId) return false;
                         
                         $house = House::find($houseId);
                         
-                        // Als planning_type 'day' is -> return false (verbergen)
-                        // Anders -> return true (tonen)
+                        // Verberg als het dagplanning is
                         return $house && $house->planning_type !== 'day';
                     }),
 
@@ -100,11 +98,18 @@ class ClientResource extends Resource
                     
                 // SECTIE 4: VOETEN ANALYSE
                 \Filament\Forms\Components\Section::make('Voeten Analyse')
-                    ->schema([
-                        FeetDrawing::make('feet_drawing_path')
-                            ->label('Voeten Analyse Tekening')
-                            ->helperText('Teken met je vinger, stylus of muis de probleemzones direct op de afbeelding.'),
-                    ])
+                    ->schema(function () {
+                        // DE FIX: Door een Closure (functie) te gebruiken voor het schema,
+                        // wordt Str::random() elke keer opnieuw uitgevoerd als het formulier laadt.
+                        // Dit garandeert een unieke key, ook bij "Create & Create Another".
+                        return [
+                            FeetDrawing::make('feet_drawing_path')
+                                ->label('Voeten Analyse Tekening')
+                                ->helperText('Teken met je vinger, stylus of muis de probleemzones direct op de afbeelding.')
+                                // Gebruik een Livewire-key zodat "Aanmaken & nieuwe aanmaken" een verse canvas toont.
+                                ->key(fn ($livewire) => $livewire->feetDrawingKey ?? Str::random()), 
+                        ];
+                    }),
             ]);
     }
 
@@ -115,10 +120,6 @@ class ClientResource extends Resource
                 \Filament\Tables\Columns\TextColumn::make('room_number')->label('Kmr')->sortable()->searchable(),
                 \Filament\Tables\Columns\TextColumn::make('name')->label('Naam Bewoner')->sortable()->searchable(),
                 \Filament\Tables\Columns\TextColumn::make('house.name')->label('Locatie / Afdeling')->sortable(),
-                
-                // Deze kolommen zijn misschien overbodig bij dagplanning, 
-                // maar in de tabel is het vaak handig om ze wel te zien als ze ingevuld zijn.
-                // Je zou hier eventueel ook toggleable logic op kunnen zetten, maar dat is complexer in de table builder.
                 \Filament\Tables\Columns\TextColumn::make('frequency_weeks')->label('Freq.')->suffix(' wkn')->toggleable(),
                 \Filament\Tables\Columns\TextColumn::make('next_planned_date')->label('Volgend Bezoek')->date('d/m/Y')->toggleable(),
             ])

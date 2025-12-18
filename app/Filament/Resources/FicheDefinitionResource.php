@@ -21,6 +21,7 @@ class FicheDefinitionResource extends Resource
     protected static ?string $pluralModelLabel = 'fiche instellingen';
     protected static ?string $navigationLabel = 'Fiche Instellingen';
     protected static ?string $navigationIcon = 'heroicon-o-cog';
+    protected static ?int $navigationSort = 3;
 
   public static function form(Form $form): Form
 {
