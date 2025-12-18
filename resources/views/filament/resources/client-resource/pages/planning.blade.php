@@ -21,7 +21,7 @@
         </div>
 
         <div
-            class="flex items-center justify-center bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm p-1">
+            class="flex items-center justify-center min-w-[220px] bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm p-2">
             <button wire:click="previousPeriod"
                 class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -29,10 +29,8 @@
                 </svg>
             </button>
 
-            <div class="px-4 text-center min-w-[140px]">
+            <div class="px-4 text-center">
                 @if($viewMode === 'agenda')
-                <div class="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Week {{
-                    \Carbon\Carbon::parse($agendaStartDate)->weekOfYear }}</div>
                 <div class="text-sm font-bold text-gray-900 dark:text-white">
                     {{ \Carbon\Carbon::parse($agendaStartDate)->startOfWeek()->format('d M') }} - {{
                     \Carbon\Carbon::parse($agendaStartDate)->endOfWeek()->format('d M') }}
@@ -58,15 +56,17 @@
 
         <!-- SCROLLABLE CONTAINER -->
         <div
+            x-data="{ openPopover: null }"
+            @click="openPopover = null"
             class="flex-1 overflow-auto relative scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
             <table class="w-full border-collapse border-spacing-0 min-w-[800px] table-fixed">
 
                 <!-- HEADER (STICKY) -->
                 <thead
-                    class="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 sticky top-0 z-30 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+                    class="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 top-0 z-30 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
                     <tr>
                         <th
-                            class="w-20 p-3 border-b border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky left-0 top-0 z-40 text-xs font-bold uppercase text-gray-400 tracking-wider">
+                            class="w-20 p-3 border-b border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 left-0 top-0 z-40 text-xs font-bold uppercase text-gray-400 tracking-wider">
                             Tijd
                         </th>
 
@@ -98,7 +98,7 @@
 
                         <!-- Tijd Kolom (sticky) -->
                         <td
-                            class="sticky left-0 z-20 w-20 p-0 border-r border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 align-middle">
+                            class="left-0 z-20 w-20 p-0 border-r border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 align-middle">
                             <div class="w-full h-full flex flex-col items-center justify-center">
                                 <div class="text-xs font-mono text-gray-400 text-center">
                                     {{ $time }}
@@ -122,15 +122,16 @@
                                 @if($appointment)
                                 <!-- AFSPRAAK BLOK -->
                                 <div
-                                    class="absolute inset-0 border-l-4 shadow-sm flex flex-col items-center justify-center gap-1 cursor-default z-10 transition-transform hover:scale-[1.01]
+                                    class="absolute inset-0 border-l-4 shadow-sm flex flex-col items-center justify-center gap-1 cursor-pointer transition-transform hover:scale-[1.01]
                                                     {{ $appointment->is_planned ? 'border-sky-500 dark:border-sky-400' : 'bg-green-100/90 border-green-500 dark:bg-green-900/60 dark:border-green-400' }}"
                                     @if($appointment->is_planned)
                                         style="background: rgba(56, 189, 248, 0.16); border-left: solid rgba(80, 189, 248, 0.16); border-left-width: 0.2rem;"
                                     @endif
+                                    @click.stop="openPopover = openPopover === '{{ $dateStr }}-{{ $time }}' ? null : '{{ $dateStr }}-{{ $time }}'"
                                 >
 
                                     <span
-                                        class="text-xs font-bold {{ $appointment->is_planned ? 'text-sky-900 dark:text-sky-100' : 'text-green-900 dark:text-green-100' }} truncate w-full px-2 text-center select-none">
+                                        class="text-xs font-bold {{ $appointment->is_planned ? 'text-sky-900 dark:text-sky-100' : 'text-green-900 dark:text-green-100' }} truncate w-full px-2 text-center select-none border-l-amber-50 border-l-4">
                                         {{ $appointment->client->name }}
                                     </span>
 
@@ -145,6 +146,28 @@
                                                 clip-rule="evenodd" />
                                         </svg>
                                     </button>
+
+                                    <div x-cloak x-show="openPopover === '{{ $dateStr }}-{{ $time }}'" @click.outside="openPopover = null"
+                                        class="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg w-56 p-3 z-50">
+                                        <div class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                                            {{ $appointment->client->name }}
+                                        </div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                            {{ \Carbon\Carbon::parse($dateStr)->format('d/m') }} · {{ $time }}
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <button type="button" @click.stop="openPopover = null"
+                                                class="flex-1 px-3 py-2 text-xs font-medium rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition">
+                                                Sluiten
+                                            </button>
+                                            <button type="button"
+                                                wire:click.stop="removeAppointment('{{ $dateStr }}', '{{ $time }}')"
+                                                wire:confirm="Wil je de afspraak van {{ $appointment->client->name }} annuleren?"
+                                                class="px-3 py-2 text-xs font-semibold rounded-md bg-red-500 hover:bg-red-600 text-white transition">
+                                                Verwijderen
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                                 @else
                                 <!-- LEEG VAK -->
@@ -209,7 +232,7 @@
                 @foreach($matrixRows as $client)
                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition duration-75">
                     <td
-                        class="px-4 py-3 font-medium text-gray-900 dark:text-white sticky left-0 bg-white dark:bg-gray-900 border-r dark:border-gray-700 shadow-sm z-10">
+                        class="px-4 py-3 font-medium text-gray-900 dark:text-white left-0 bg-white dark:bg-gray-900 border-r dark:border-gray-700 shadow-sm z-10">
                         {{ $client->name }}
                         <div class="text-xs text-gray-400 font-normal">{{ $client->room_number }}</div>
                     </td>
