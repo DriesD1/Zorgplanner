@@ -147,6 +147,7 @@ class ClientResource extends Resource
             'create' => Pages\CreateClient::route('/create'),
             'edit' => Pages\EditClient::route('/{record}/edit'),
             'planning' => Pages\Planning::route('/planning'),
+            'communication-sheet' => Pages\CommunicationSheet::route('/communication-sheet'),
         ];
     }
 }

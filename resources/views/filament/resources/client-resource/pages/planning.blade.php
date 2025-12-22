@@ -17,6 +17,17 @@
             </div>
         </div>
         
+        <div class="flex items-center gap-2 sm:order-3">
+            <button 
+                wire:click="goToCommunicationSheet"
+                @if($viewMode !== 'week') disabled @endif
+                class="px-4 py-2 text-sm font-semibold rounded-lg border shadow-sm transition flex items-center gap-2
+                    {{ $viewMode === 'week' ? 'bg-primary-500 text-white border-primary-600 hover:bg-primary-600' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 20h9"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4h9"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 4h.01M5 20h.01M5 12h.01M12 6v4m0 0l3-3m-3 3l-3-3m3 8v-4m0 0l3 3m-3-3l-3 3"/></svg>
+                Communicatieblad
+            </button>
+        </div>
+        
         <div class="flex items-center justify-center bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm h-10 px-1">
             <button wire:click="previousPeriod" class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
