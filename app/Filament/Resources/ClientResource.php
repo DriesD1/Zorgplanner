@@ -20,14 +20,23 @@ class ClientResource extends Resource
     protected static ?string $model = Client::class;
 
     protected static ?string $modelLabel = 'klant';
+    protected static ?int $navigationSort = 2;  
     protected static ?string $pluralModelLabel = 'klanten';
-    protected static ?string $navigationLabel = 'Klanten';
-    protected static ?string $navigationIcon = 'heroicon-o-users';
-    protected static ?int $navigationSort = 2;
+
+    // --- NAVIGATIE HERSTELD ---
+    // Geen groups meer, gewoon standaard
+    protected static ?string $navigationIcon = 'heroicon-o-users'; 
+
+    // DE BADGE (Het getalletje 5)
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
+    // --------------------------
 
     public static function form(Form $form): Form
     {
-        // Dynamisch opbouwen van medische fiche velden
+        // Jouw bestaande logica voor de medische fiche
         $ficheFields = [];
         if (auth()->check()) {
             $definitions = \App\Models\FicheDefinition::where('user_id', auth()->id())
@@ -86,12 +95,10 @@ class ClientResource extends Resource
                         if (! $houseId) return false;
                         
                         $house = House::find($houseId);
-                        
-                        // Verberg als het dagplanning is
                         return $house && $house->planning_type !== 'day';
                     }),
 
-                // SECTIE 3: DE DYNAMISCHE MEDISCHE FICHE
+                // SECTIE 3: MEDISCHE FICHE
                 \Filament\Forms\Components\Section::make('Medische Fiche')
                     ->schema($ficheFields) 
                     ->columns(2),
@@ -99,14 +106,10 @@ class ClientResource extends Resource
                 // SECTIE 4: VOETEN ANALYSE
                 \Filament\Forms\Components\Section::make('Voeten Analyse')
                     ->schema(function () {
-                        // DE FIX: Door een Closure (functie) te gebruiken voor het schema,
-                        // wordt Str::random() elke keer opnieuw uitgevoerd als het formulier laadt.
-                        // Dit garandeert een unieke key, ook bij "Create & Create Another".
                         return [
                             FeetDrawing::make('feet_drawing_path')
                                 ->label('Voeten Analyse Tekening')
                                 ->helperText('Teken met je vinger, stylus of muis de probleemzones direct op de afbeelding.')
-                                // Gebruik een Livewire-key zodat "Aanmaken & nieuwe aanmaken" een verse canvas toont.
                                 ->key(fn ($livewire) => $livewire->feetDrawingKey ?? Str::random()), 
                         ];
                     }),

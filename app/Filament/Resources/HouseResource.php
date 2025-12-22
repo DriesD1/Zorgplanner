@@ -16,10 +16,15 @@ class HouseResource extends Resource
     protected static ?string $model = House::class;
 
     protected static ?string $modelLabel = 'huis';
+    protected static ?int $navigationSort = 1;  
     protected static ?string $pluralModelLabel = 'huizen';
     protected static ?string $navigationLabel = 'Huizen';
     protected static ?string $navigationIcon = 'heroicon-o-building-office';
-    protected static ?int $navigationSort = 1;
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
 
     public static function form(Form $form): Form
     {
