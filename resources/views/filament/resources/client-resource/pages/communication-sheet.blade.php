@@ -81,48 +81,88 @@
     </div>
 
     <x-filament::modal id="pdf-preview-modal" width="screen" alignment="center">
-        
         <x-slot name="heading">
             Voorbeeld Communicatieblad
         </x-slot>
 
-        <div class="w-full h-[calc(100vh-10rem)]"
-             x-data="{ pdfBlobUrl: null }"
-             x-effect="
-                if ($wire.previewPdfData) {
-                    fetch($wire.previewPdfData)
-                        .then(res => res.blob())
-                        .then(blob => {
-                            // Hier voegen we de magische zoom parameter toe
-                            pdfBlobUrl = URL.createObjectURL(blob) + '#view=FitH';
-                        });
-                } else {
-                    pdfBlobUrl = null;
-                }
-             ">
-            
-            <template x-if="pdfBlobUrl">
-                <iframe :src="pdfBlobUrl" class="w-full h-full border-0 rounded-lg shadow-inner"></iframe>
-            </template>
-            
-            <template x-if="!pdfBlobUrl">
-                <div class="flex flex-col items-center justify-center h-full text-gray-500">
-                    <svg class="animate-spin h-10 w-10 text-primary-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    <span>PDF wordt gegenereerd...</span>
-                </div>
-            </template>
+        {{-- Modal body --}}
+        <div class="h-full flex flex-col">
+
+            {{-- Preview container --}}
+            <div
+                class="-m-6 w-[calc(100%+3rem)] flex-1 flex bg-gray-100"
+                x-data="{ pdfBlobUrl: null }"
+                x-effect="
+                    if ($wire.previewPdfData) {
+                        fetch($wire.previewPdfData)
+                            .then(res => res.blob())
+                            .then(blob => {
+                                pdfBlobUrl = URL.createObjectURL(blob) + '#view=FitH';
+                            });
+                    } else {
+                        pdfBlobUrl = null;
+                    }
+                "
+            >
+
+                {{-- PDF iframe --}}
+                <template x-if="pdfBlobUrl">
+                    <iframe
+                        :src="pdfBlobUrl"
+                        class="w-full h-full border-0 bg-white"
+                    ></iframe>
+                </template>
+
+                {{-- Loading state --}}
+                <template x-if="!pdfBlobUrl">
+                    <div class="flex flex-col items-center justify-center w-full h-full text-gray-500">
+                        <svg
+                            class="animate-spin h-10 w-10 text-primary-500 mb-4"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                        >
+                            <circle
+                                class="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                stroke-width="4"
+                            ></circle>
+                            <path
+                                class="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                        </svg>
+
+                        <span class="text-sm font-medium">
+                            PDF wordt gegenereerd…
+                        </span>
+                    </div>
+                </template>
+            </div>
         </div>
-        
+
         <x-slot name="footer">
             <div class="flex gap-4 justify-end w-full">
-                <x-filament::button color="gray" x-on:click="$dispatch('close-modal', { id: 'pdf-preview-modal' })">
+                <x-filament::button
+                    color="gray"
+                    x-on:click="$dispatch('close-modal', { id: 'pdf-preview-modal' })"
+                >
                     Sluiten
                 </x-filament::button>
-                <x-filament::button wire:click="exportPdf" icon="heroicon-o-arrow-down-tray">
+
+                <x-filament::button
+                    wire:click="exportPdf"
+                    icon="heroicon-o-arrow-down-tray"
+                >
                     Download Definitief
                 </x-filament::button>
             </div>
         </x-slot>
     </x-filament::modal>
+
 
 </x-filament-panels::page>
