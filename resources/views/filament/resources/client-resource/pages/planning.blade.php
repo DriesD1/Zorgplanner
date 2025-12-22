@@ -17,37 +17,39 @@
             </div>
         </div>
         
-        <div class="flex items-center gap-2 sm:order-3">
-            <button 
-                wire:click="goToCommunicationSheet"
-                @if($viewMode !== 'week') disabled @endif
-                class="px-4 py-2 text-sm font-semibold rounded-lg border shadow-sm transition flex items-center gap-2
-                    {{ $viewMode === 'week' ? 'bg-primary-500 text-white border-primary-600 hover:bg-primary-600' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 20h9"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4h9"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 4h.01M5 20h.01M5 12h.01M12 6v4m0 0l3-3m-3 3l-3-3m3 8v-4m0 0l3 3m-3-3l-3 3"/></svg>
-                Communicatieblad
-            </button>
-        </div>
+        @if($viewMode === 'week')
+            <div class="flex items-center gap-2 sm:order-3">
+                <button 
+                    wire:click="goToCommunicationSheet"
+                    class="px-4 py-2 text-sm font-semibold rounded-lg border shadow-sm transition flex items-center gap-2 bg-primary-500 text-white border-primary-600 hover:bg-primary-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 7.5h6M9 11.5h6" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.5 4.5h7a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-7a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15.5l2 2m-2-2l-2 2" />
+                    </svg>
+                    Communicatieblad
+                </button>
+            </div>
+        @endif
         
-        <div class="flex items-center justify-center bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm h-10 px-1">
-            <button wire:click="previousPeriod" class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 transition">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            </button>
-            
-            <div class="px-4 text-center min-w-[160px]">
-                @if($viewMode === 'agenda')
+        @if($viewMode === 'agenda')
+            <div class="flex items-center justify-center bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm h-10 px-1" style="min-width: fit-content;">
+                <button wire:click="previousPeriod" class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                
+                <div class="px-4 text-center min-w-[160px]">
                     <div class="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Week {{ \Carbon\Carbon::parse($agendaStartDate)->weekOfYear }}</div>
                     <div class="text-sm font-bold text-gray-900 dark:text-white">
                         {{ \Carbon\Carbon::parse($agendaStartDate)->startOfWeek()->format('d M') }} - {{ \Carbon\Carbon::parse($agendaStartDate)->endOfWeek()->format('d M') }}
                     </div>
-                @else
-                    <span class="text-sm font-bold text-gray-900 dark:text-white">Weekmatrix</span>
-                @endif
-            </div>
+                </div>
 
-            <button wire:click="nextPeriod" class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 transition">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            </button>
-        </div>
+                <button wire:click="nextPeriod" class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
+            </div>
+        @endif
     </div>
 
     @if($viewMode === 'agenda')
@@ -110,7 +112,7 @@
                                                         <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{ \Carbon\Carbon::parse($dateStr)->format('d/m/Y') }} · {{ $time }}</div>
                                                         <div class="flex gap-2">
                                                             <button type="button" @click.stop="openPopover = null" class="flex-1 px-3 py-2 text-xs font-medium rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition">Sluiten</button>
-                                                            <button type="button" wire:click.stop="removeAppointment('{{ $dateStr }}', '{{ $time }}')" wire:confirm="Verwijderen?" class="px-3 py-2 text-xs font-semibold rounded-md bg-red-500 hover:bg-red-600 text-white transition flex items-center justify-center">
+                                                            <button type="button" wire:click.stop="removeAppointment('{{ $dateStr }}', '{{ $time }}')" class="px-3 py-2 text-xs font-semibold rounded-md bg-red-500 hover:bg-red-600 text-white transition flex items-center justify-center">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                                             </button>
                                                         </div>
