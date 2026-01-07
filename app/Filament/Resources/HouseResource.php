@@ -10,6 +10,7 @@ use Filament\Forms\Get; // <--- Belangrijk voor de logica
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class HouseResource extends Resource
 {
@@ -23,7 +24,7 @@ class HouseResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count();
+        return static::getModel()::where('organization_id', auth()->user()?->organization_id)->count();
     }
 
     public static function form(Form $form): Form
@@ -33,6 +34,9 @@ class HouseResource extends Resource
                 // Een sectie voor de basisgegevens
                 Forms\Components\Section::make('Locatie Gegevens')
                     ->schema([
+                        Forms\Components\Hidden::make('organization_id')
+                            ->default(fn () => auth()->user()?->organization_id),
+
                         Forms\Components\TextInput::make('name')
                             ->label('Naam Woonzorgcentrum')
                             ->required(),
@@ -133,5 +137,11 @@ class HouseResource extends Resource
             'create' => Pages\CreateHouse::route('/create'),
             'edit' => Pages\EditHouse::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->where('organization_id', auth()->user()?->organization_id);
     }
 }

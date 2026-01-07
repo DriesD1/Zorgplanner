@@ -49,7 +49,7 @@ class Planning extends Page implements HasForms, HasActions
     {
         $this->agendaStartDate = Carbon::now()->startOfWeek()->format('Y-m-d');
 
-        $firstHouse = House::where('user_id', auth()->id())->first();
+        $firstHouse = House::where('organization_id', auth()->user()?->organization_id)->first();
         if ($firstHouse) {
             $this->selectedHouseId = $firstHouse->id;
             $this->updatedSelectedHouseId(); 

@@ -34,6 +34,9 @@ class FicheDefinitionResource extends Resource
                     \Filament\Forms\Components\Hidden::make('user_id')
                         ->default(auth()->id()),
 
+                    \Filament\Forms\Components\Hidden::make('organization_id')
+                        ->default(fn () => auth()->user()?->organization_id),
+
                     \Filament\Forms\Components\TextInput::make('label')
                         ->label('Naam van het veld')
                         ->placeholder('bv. Suikerziekte of Huisarts')
@@ -108,5 +111,11 @@ public static function table(Table $table): Table
             'create' => Pages\CreateFicheDefinition::route('/create'),
             'edit' => Pages\EditFicheDefinition::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->where('organization_id', auth()->user()?->organization_id);
     }
 }

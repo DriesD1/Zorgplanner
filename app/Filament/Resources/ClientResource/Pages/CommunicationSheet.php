@@ -47,7 +47,7 @@ class CommunicationSheet extends Page
         $this->headerMoment = '';
 
         // Alleen huizen ophalen van de gebruiker WAAR planning_type op 'week' staat
-        $this->houseOptions = House::where('user_id', auth()->id())
+        $this->houseOptions = House::where('organization_id', auth()->user()?->organization_id)
             ->where('planning_type', 'week')
             ->orderBy('name')
             ->pluck('name', 'id')
@@ -61,7 +61,7 @@ class CommunicationSheet extends Page
         // Controleer of we nu een geldig huis hebben
         $house = House::query()
             ->where('id', $this->houseId)
-            ->where('user_id', auth()->id())
+            ->where('organization_id', auth()->user()?->organization_id)
             ->first();
 
         if (! $house) {
@@ -107,6 +107,7 @@ class CommunicationSheet extends Page
     {
         $this->archiveWeeks = CommunicationEntry::query()
             ->where('house_id', $this->houseId)
+            ->where('organization_id', auth()->user()?->organization_id)
             ->select('year', 'week_number')
             ->distinct()
             ->orderBy('year', 'desc')
@@ -129,6 +130,7 @@ class CommunicationSheet extends Page
     {
         CommunicationEntry::query()
             ->where('house_id', $this->houseId)
+            ->where('organization_id', auth()->user()?->organization_id)
             ->where('year', $year)
             ->where('week_number', $weekNumber)
             ->delete();
@@ -170,6 +172,7 @@ class CommunicationSheet extends Page
 
         $savedEntries = CommunicationEntry::query()
             ->where('house_id', $this->houseId)
+            ->where('organization_id', auth()->user()?->organization_id)
             ->where('year', $this->year)
             ->where('week_number', $this->weekNumber)
             ->get()
@@ -224,6 +227,7 @@ class CommunicationSheet extends Page
                     'client_id' => $row['client_id'],
                     'year' => $this->year,
                     'week_number' => $this->weekNumber,
+                    'organization_id' => auth()->user()?->organization_id,
                 ])->delete();
             } else {
                 CommunicationEntry::updateOrCreate(
@@ -232,10 +236,12 @@ class CommunicationSheet extends Page
                         'client_id' => $row['client_id'],
                         'year' => $this->year,
                         'week_number' => $this->weekNumber,
+                        'organization_id' => auth()->user()?->organization_id,
                     ],
                     [
                         'date' => $row['date'] ?: null,
                         'note' => $row['note'],
+                        'organization_id' => auth()->user()?->organization_id,
                     ]
                 );
             }

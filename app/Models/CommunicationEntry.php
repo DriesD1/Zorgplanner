@@ -12,4 +12,23 @@ class CommunicationEntry extends Model
     {
         return $this->belongsTo(Client::class);
     }
+
+    public function house()
+    {
+        return $this->belongsTo(House::class);
+    }
+
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (CommunicationEntry $entry) {
+            if (! $entry->organization_id && $entry->house) {
+                $entry->organization_id = $entry->house->organization_id;
+            }
+        });
+    }
 }

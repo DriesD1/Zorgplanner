@@ -14,16 +14,6 @@ class Client extends Model
         'next_planned_date' => 'date',
     ];
 
-    protected static function booted()
-    {
-        // Verwijder de feet drawing image wanneer een client wordt verwijderd
-        static::deleting(function ($client) {
-            if ($client->feet_drawing_path && Storage::disk('public')->exists($client->feet_drawing_path)) {
-                Storage::disk('public')->delete($client->feet_drawing_path);
-            }
-        });
-    }
-
     public function house()
     {
         return $this->belongsTo(House::class);
@@ -32,5 +22,25 @@ class Client extends Model
     public function visits()
     {
         return $this->hasMany(Visit::class);
+    }
+
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    protected static function booted()
+    {
+        static::creating(function (Client $client) {
+            if (! $client->organization_id && $client->house) {
+                $client->organization_id = $client->house->organization_id;
+            }
+        });
+
+        static::deleting(function ($client) {
+            if ($client->feet_drawing_path && Storage::disk('public')->exists($client->feet_drawing_path)) {
+                Storage::disk('public')->delete($client->feet_drawing_path);
+            }
+        });
     }
 }

@@ -15,6 +15,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Navigation\NavigationItem;
 use Illuminate\Support\Str; 
+use Illuminate\Database\Eloquent\Builder;
 
 class ClientResource extends Resource
 {
@@ -31,7 +32,7 @@ class ClientResource extends Resource
     // DE BADGE (Het getalletje 5)
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count();
+        return static::getModel()::where('organization_id', auth()->user()?->organization_id)->count();
     }
     // --------------------------
 
@@ -40,7 +41,7 @@ class ClientResource extends Resource
         // Jouw bestaande logica voor de medische fiche
         $ficheFields = [];
         if (auth()->check()) {
-            $definitions = \App\Models\FicheDefinition::where('user_id', auth()->id())
+            $definitions = \App\Models\FicheDefinition::where('organization_id', auth()->user()?->organization_id)
                 ->orderBy('sort_order')
                 ->get();
 
@@ -62,13 +63,16 @@ class ClientResource extends Resource
                         \Filament\Forms\Components\Select::make('house_id')
                             ->label('Woonzorgcentrum / Afdeling')
                             ->relationship('house', 'name', function ($query) {
-                                return $query->where('user_id', auth()->id());
+                                return $query->where('organization_id', auth()->user()?->organization_id);
                             })
                             ->live() 
                             ->afterStateUpdated(function (Set $set, $state) {
                                 $set('house_id', $state);
                             })
                             ->required(),
+
+                        \Filament\Forms\Components\Hidden::make('organization_id')
+                            ->default(fn () => auth()->user()?->organization_id),
 
                         \Filament\Forms\Components\TextInput::make('name')
                             ->label('Volledige Naam')
@@ -130,7 +134,7 @@ class ClientResource extends Resource
             ->filters([
                 \Filament\Tables\Filters\SelectFilter::make('house_id')
                     ->label('Filter op Huis/Afdeling')
-                    ->relationship('house', 'name', fn($query) => $query->where('user_id', auth()->id())),
+                    ->relationship('house', 'name', fn($query) => $query->where('organization_id', auth()->user()?->organization_id)),
             ])
             ->actions([\Filament\Tables\Actions\EditAction::make()])
             ->bulkActions([\Filament\Tables\Actions\BulkActionGroup::make([\Filament\Tables\Actions\DeleteBulkAction::make()])]);
@@ -167,5 +171,11 @@ class ClientResource extends Resource
                 ->group(static::getNavigationGroup())
                 ->sort(4),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->where('organization_id', auth()->user()?->organization_id);
     }
 }

@@ -21,4 +21,18 @@ class House extends Model
     {
         return $this->hasMany(Client::class);
     }
+
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (House $house) {
+            if (! $house->organization_id && $house->user) {
+                $house->organization_id = $house->user->organization_id;
+            }
+        });
+    }
 }
