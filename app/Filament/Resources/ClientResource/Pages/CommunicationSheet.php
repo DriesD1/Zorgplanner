@@ -32,11 +32,25 @@ class CommunicationSheet extends Page
     public $rows = [];
     public $previewPdfData = null;
     public $archiveWeeks = [];
+    public $houseOptions = [];
 
     public function mount(): void
     {
         $this->houseId = request()->get('house');
         $dateParam = request()->get('date');
+        
+        $this->houseOptions = House::where('user_id', auth()->id())
+            ->where('planning_type', '!=', 'day')
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
+
+        if (! $this->houseId) {
+            $firstHouseId = array_key_first($this->houseOptions);
+            if ($firstHouseId) {
+                $this->houseId = $firstHouseId;
+            }
+        }
         
         $this->currentDate = $dateParam ? Carbon::parse($dateParam)->format('Y-m-d') : Carbon::now()->format('Y-m-d');
         $this->headerDate = Carbon::now()->format('Y-m-d');
@@ -45,11 +59,32 @@ class CommunicationSheet extends Page
         $house = House::query()
             ->where('id', $this->houseId)
             ->where('user_id', auth()->id())
+            ->where('planning_type', '!=', 'day')
             ->first();
 
         if (! $house) {
             Notification::make()->title('Huis niet gevonden.')->danger()->send();
             $this->redirect(ClientResource::getUrl('planning'));
+            return;
+        }
+
+        $this->houseName = $house->name;
+        $this->loadSheetData();
+    }
+
+    public function updatedHouseId($value)
+    {
+        if (! $value) {
+            return;
+        }
+
+        $house = House::where('id', $value)
+            ->where('user_id', auth()->id())
+            ->where('planning_type', '!=', 'day')
+            ->first();
+
+        if (! $house) {
+            Notification::make()->title('Huis niet gevonden.')->danger()->send();
             return;
         }
 

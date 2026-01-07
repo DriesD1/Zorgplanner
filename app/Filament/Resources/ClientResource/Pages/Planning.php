@@ -22,6 +22,7 @@ class Planning extends Page implements HasForms, HasActions
 
     protected static string $resource = ClientResource::class;
     protected static string $view = 'filament.resources.client-resource.pages.planning';
+    protected static ?int $navigationSort = 3;  
     protected static ?string $title = 'Agenda & Planning';
     
     public $selectedHouseId;

@@ -13,6 +13,7 @@ use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Navigation\NavigationItem;
 use Illuminate\Support\Str; 
 
 class ClientResource extends Resource
@@ -148,6 +149,23 @@ class ClientResource extends Resource
             'edit' => Pages\EditClient::route('/{record}/edit'),
             'planning' => Pages\Planning::route('/planning'),
             'communication-sheet' => Pages\CommunicationSheet::route('/communication-sheet'),
+        ];
+    }
+
+    public static function getNavigationItems(): array
+    {
+        return [
+            ...parent::getNavigationItems(),
+            NavigationItem::make('Planning')
+                ->url(static::getUrl('planning'))
+                ->icon('heroicon-o-calendar')
+                ->group(static::getNavigationGroup())
+                ->sort(3),
+            NavigationItem::make('Communicatieblad')
+                ->url(static::getUrl('communication-sheet'))
+                ->icon('heroicon-o-document-text')
+                ->group(static::getNavigationGroup())
+                ->sort(4),
         ];
     }
 }
