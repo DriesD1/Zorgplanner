@@ -40,6 +40,9 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
+                \App\Filament\Widgets\OrgStatsOverview::class,
+                \App\Filament\Widgets\UpcomingVisitsTable::class,
+                \App\Filament\Widgets\WeeklyMatrixTodoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
