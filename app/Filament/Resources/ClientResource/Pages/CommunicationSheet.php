@@ -10,6 +10,8 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Illuminate\Support\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
 
 class CommunicationSheet extends Page
 {
@@ -19,8 +21,10 @@ class CommunicationSheet extends Page
 
     public $houseId;
     public $houseName;
+    
+    public $houseOptions = []; 
+    
     public $currentDate; 
-
     public $weekLabel;
     public $weekNumber;
     public $year;
@@ -32,38 +36,37 @@ class CommunicationSheet extends Page
     public $rows = [];
     public $previewPdfData = null;
     public $archiveWeeks = [];
-    public $houseOptions = [];
 
     public function mount(): void
     {
         $this->houseId = request()->get('house');
         $dateParam = request()->get('date');
         
-        $this->houseOptions = House::where('user_id', auth()->id())
-            ->where('planning_type', '!=', 'day')
-            ->orderBy('name')
-            ->pluck('name', 'id')
-            ->toArray();
-
-        if (! $this->houseId) {
-            $firstHouseId = array_key_first($this->houseOptions);
-            if ($firstHouseId) {
-                $this->houseId = $firstHouseId;
-            }
-        }
-        
         $this->currentDate = $dateParam ? Carbon::parse($dateParam)->format('Y-m-d') : Carbon::now()->format('Y-m-d');
         $this->headerDate = Carbon::now()->format('Y-m-d');
         $this->headerMoment = '';
 
+        // Alleen huizen ophalen van de gebruiker WAAR planning_type op 'week' staat
+        $this->houseOptions = House::where('user_id', auth()->id())
+            ->where('planning_type', 'week')
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
+
+        // Als er geen houseId is (of de geselecteerde is niet geldig voor deze lijst), pak de eerste
+        if ((!$this->houseId || !array_key_exists($this->houseId, $this->houseOptions)) && count($this->houseOptions) > 0) {
+            $this->houseId = array_key_first($this->houseOptions);
+        }
+
+        // Controleer of we nu een geldig huis hebben
         $house = House::query()
             ->where('id', $this->houseId)
             ->where('user_id', auth()->id())
-            ->where('planning_type', '!=', 'day')
             ->first();
 
         if (! $house) {
-            Notification::make()->title('Huis niet gevonden.')->danger()->send();
+            // Als er helemaal geen 'week' huizen zijn, of ID klopt niet -> terugsturen
+            Notification::make()->title('Geen geldig huis gevonden.')->danger()->send();
             $this->redirect(ClientResource::getUrl('planning'));
             return;
         }
@@ -72,24 +75,14 @@ class CommunicationSheet extends Page
         $this->loadSheetData();
     }
 
-    public function updatedHouseId($value)
+    // Zorgt dat de pagina ververst als je een ander huis kiest in de dropdown
+    public function updatedHouseId()
     {
-        if (! $value) {
-            return;
+        $house = House::find($this->houseId);
+        if ($house) {
+            $this->houseName = $house->name;
+            $this->loadSheetData();
         }
-
-        $house = House::where('id', $value)
-            ->where('user_id', auth()->id())
-            ->where('planning_type', '!=', 'day')
-            ->first();
-
-        if (! $house) {
-            Notification::make()->title('Huis niet gevonden.')->danger()->send();
-            return;
-        }
-
-        $this->houseName = $house->name;
-        $this->loadSheetData();
     }
 
     public function previousWeek()
@@ -110,7 +103,6 @@ class CommunicationSheet extends Page
         $this->dispatch('open-modal', id: 'archive-modal');
     }
 
-    // Aparte functie gemaakt zodat we de lijst kunnen verversen na verwijderen
     protected function fetchArchiveWeeks()
     {
         $this->archiveWeeks = CommunicationEntry::query()
@@ -123,17 +115,16 @@ class CommunicationSheet extends Page
             ->map(function ($entry) {
                 $date = Carbon::now()->setISODate($entry->year, $entry->week_number)->startOfWeek();
                 return [
-                    'year' => $entry->year,          // Nodig voor verwijderen
-                    'week' => $entry->week_number,   // Nodig voor verwijderen
-                    'label' => $date->format('d/m') . ' - ' . $date->copy()->endOfWeek()->format('d/m'), // DATUM NU EERST
-                    'subLabel' => "Week {$entry->week_number} · {$entry->year}", // WEEK NU KLEIN
+                    'year' => $entry->year,          
+                    'week' => $entry->week_number,   
+                    'label' => $date->format('d/m') . ' - ' . $date->copy()->endOfWeek()->format('d/m'), 
+                    'subLabel' => "Week {$entry->week_number} · {$entry->year}", 
                     'dateStr' => $date->format('Y-m-d'),
                 ];
             })
             ->toArray();
     }
 
-    // NIEUW: Functie om een week te verwijderen
     public function deleteArchiveWeek($year, $weekNumber)
     {
         CommunicationEntry::query()
@@ -142,10 +133,8 @@ class CommunicationSheet extends Page
             ->where('week_number', $weekNumber)
             ->delete();
 
-        // Herlaad de lijst en geef melding
         $this->fetchArchiveWeeks();
         
-        // Als we toevallig naar de verwijderde week keken, herlaad dan de huidige view ook (maakt hem leeg)
         if ($this->year == $year && $this->weekNumber == $weekNumber) {
             $this->loadSheetData();
         }
@@ -192,7 +181,12 @@ class CommunicationSheet extends Page
             $isDue = $this->isVisitDue($client, $weekStart->toDateString());
             $savedEntry = $savedEntries->get($client->id);
 
-            if (! $visitForWeek && ! $isDue && ! $savedEntry) continue;
+            // Filter: alleen tonen als er inhoud is (tekst), of als er een bezoek/planning is
+            $hasContent = $savedEntry && filled($savedEntry->note);
+
+            if (! $visitForWeek && ! $isDue && ! $hasContent) {
+                continue;
+            }
 
             $initialDate = null;
             if ($savedEntry && $savedEntry->date) {
@@ -223,18 +217,28 @@ class CommunicationSheet extends Page
             
             if (!isset($row['client_id'])) return;
 
-            CommunicationEntry::updateOrCreate(
-                [
+            // Opschonen als leeg
+            if (empty(trim($row['note'])) && empty($row['date'])) {
+                CommunicationEntry::where([
                     'house_id' => $this->houseId,
                     'client_id' => $row['client_id'],
                     'year' => $this->year,
                     'week_number' => $this->weekNumber,
-                ],
-                [
-                    'date' => $row['date'] ?: null,
-                    'note' => $row['note'],
-                ]
-            );
+                ])->delete();
+            } else {
+                CommunicationEntry::updateOrCreate(
+                    [
+                        'house_id' => $this->houseId,
+                        'client_id' => $row['client_id'],
+                        'year' => $this->year,
+                        'week_number' => $this->weekNumber,
+                    ],
+                    [
+                        'date' => $row['date'] ?: null,
+                        'note' => $row['note'],
+                    ]
+                );
+            }
         }
     }
 
@@ -245,6 +249,71 @@ class CommunicationSheet extends Page
         $current = Carbon::parse($dateString)->startOfWeek();
         if($current->lt($planned)) return false;
         return ($planned->diffInWeeks($current) % $client->frequency_weeks) === 0;
+    }
+
+    // Actie om persoon toe te voegen
+    public function addClientAction(): Action
+    {
+        return Action::make('addClient')
+            ->label('Persoon toevoegen')
+            ->button()
+            ->color('gray')
+            ->size('sm')
+            ->icon('heroicon-m-plus')
+            ->form([
+                Select::make('client_id')
+                    ->label('Selecteer bewoner')
+                    ->options(function () {
+                        return Client::where('house_id', $this->houseId)
+                            ->orderBy('name')
+                            ->pluck('name', 'id');
+                    })
+                    ->searchable()
+                    ->preload()
+                    ->required(),
+            ])
+            ->action(function (array $data) {
+                $client = Client::find($data['client_id']);
+
+                foreach ($this->rows as $row) {
+                    if ($row['client_id'] == $client->id) {
+                        Notification::make()->title('Deze persoon staat al op de lijst.')->warning()->send();
+                        return;
+                    }
+                }
+
+                $this->rows[] = [
+                    'client_id' => $client->id,
+                    'name' => $client->name,
+                    'room_number' => $client->room_number,
+                    'date' => Carbon::now()->format('Y-m-d'), 
+                    'note' => '',
+                ];
+                
+                Notification::make()->title('Bewoner toegevoegd')->success()->send();
+            });
+    }
+
+    // Actie om rij te verwijderen
+    public function removeRow($index)
+    {
+        $row = $this->rows[$index];
+
+        // Verwijder uit database indien aanwezig
+        if (isset($row['client_id'])) {
+            CommunicationEntry::where([
+                'house_id' => $this->houseId,
+                'client_id' => $row['client_id'],
+                'year' => $this->year,
+                'week_number' => $this->weekNumber,
+            ])->delete();
+        }
+
+        // Verwijder uit de view
+        unset($this->rows[$index]);
+        $this->rows = array_values($this->rows);
+
+        Notification::make()->title('Persoon verwijderd')->success()->send();
     }
 
     public function openPreview()
